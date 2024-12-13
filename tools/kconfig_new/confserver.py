@@ -12,6 +12,7 @@ import os
 import sys
 import tempfile
 from confgen import FatalError, __version__
+from os.path import expanduser
 
 # Min/Max supported protocol versions
 MIN_PROTOCOL_VERSION = 1
@@ -68,12 +69,16 @@ def main():
 def run_server(kconfig, sdkconfig, default_version=MAX_PROTOCOL_VERSION):
     config = kconfiglib.Kconfig(kconfig)
     deprecated_options = confgen.DeprecatedOptions(config.config_prefix, path_rename_files=os.environ["IDF_PATH"])
-    with tempfile.NamedTemporaryFile(mode='w+b') as f_o:
+    home_path = expanduser("~")
+    tmp_file = "tmpmenuconfig"
+    tmp_file_path = os.path.join(home_path, tmp_file)
+    with open(tmp_file_path,mode='wb') as f_o:
+        temp = f_o.name
         with open(sdkconfig, mode='rb') as f_i:
             f_o.write(f_i.read())
         f_o.flush()
         f_o.seek(0)
-        deprecated_options.replace(sdkconfig_in=f_o.name, sdkconfig_out=sdkconfig)
+        deprecated_options.replace(sdkconfig_in=temp, sdkconfig_out=sdkconfig)
     config.load_config(sdkconfig)
 
     print("Server running, waiting for requests on stdin...", file=sys.stderr)
